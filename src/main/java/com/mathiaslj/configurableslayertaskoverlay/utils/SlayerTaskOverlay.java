@@ -31,6 +31,7 @@ import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.coords.WorldArea;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
@@ -39,22 +40,24 @@ import javax.inject.Inject;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Color;
-import java.lang.reflect.Method;
 
 @Slf4j
 public class SlayerTaskOverlay extends OverlayPanel {
     private final Client client;
     private final ConfigurableSlayerTaskOverlayPlugin plugin;
     private final ConfigurableSlayerTaskOverlayConfig config;
+    private final ConfigManager configManager;
 
     @Inject
     public SlayerTaskOverlay(
             Client client,
             ConfigurableSlayerTaskOverlayPlugin ConfigurableSlayerTaskOverlayPlugin,
-            ConfigurableSlayerTaskOverlayConfig config) {
+            ConfigurableSlayerTaskOverlayConfig config,
+            ConfigManager configManager) {
         this.client = client;
         this.plugin = ConfigurableSlayerTaskOverlayPlugin;
         this.config = config;
+        this.configManager = configManager;
 
         setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
         setPreferredSize(new Dimension(216, 40));
@@ -113,13 +116,12 @@ public class SlayerTaskOverlay extends OverlayPanel {
     private boolean isOverlayDisabledForTask(String taskName) {
         String methodName = taskNameToDisableConfigKey(taskName);
 
-        try {
-            Method method = config.getClass().getMethod(methodName);
-            return (boolean) method.invoke(config);
-        } catch (Exception e) {
-            log.warn("Could not find disable box config for task: {} (method: {})", taskName, methodName, e);
+        String disableConfig = configManager.getConfiguration("configurable-slayer-task-overlay", methodName);
+        if (disableConfig == null) {
             return false; // Default to enabled if config not found
         }
+
+        return(Boolean.parseBoolean(disableConfig));
     }
 
     private String taskNameToDisableConfigKey(String taskName) {

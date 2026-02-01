@@ -83,8 +83,9 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private static final Pattern SLAYER_ASSIGN_MESSAGE = Pattern.compile(".*new task is to kill \\d+ (?<name>.+?)s?\\..*");
     private static final Pattern SLAYER_CURRENT_MESSAGE = Pattern.compile(".*still hunting (?<name>.+?)s?[,;].*");
     private static final Pattern SLAYER_CURRENT_CHAT_MESSAGE = Pattern.compile("You're assigned to kill (?<name>.+?)s?[,;] only \\d+ more to go\\.");
-
     private static final Pattern KONAR_CHAT_PATTERN = Pattern.compile(".+ bring(?:ing)? balance to (?:\\d+ )?(?<name>.+?)s?(?:,|;|in).+");
+
+    private long taskStartTime = 0;
 
     private final Set<NPC> targets = new HashSet<>();
 
@@ -144,6 +145,12 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick gameTick) {
+        // Check if task has timed out
+        if (currentSlayerTask != null && hasTaskTimedOut()) {
+            completeTask();
+            return;
+        }
+
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
         Widget chatBoxNpcText = client.getWidget(InterfaceID.ChatLeft.TEXT);
 
@@ -418,6 +425,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         if (lookupSlayerTask != null) {
             this.currentSlayerTask = lookupSlayerTask;
+            this.taskStartTime = System.currentTimeMillis();
 
             updateWorldMapIcons();
             updateShortestPath();
@@ -438,6 +446,19 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
                 }
             }
         }
+    }
+
+    private boolean hasTaskTimedOut() {
+        int timeoutSeconds = config.overlayTimeout();
+
+        if (timeoutSeconds <= 0) {
+            return false; // Timeout disabled
+        }
+
+        long elapsedMs = System.currentTimeMillis() - taskStartTime;
+        long timeoutMs = timeoutSeconds * 1000L;
+
+        return elapsedMs > timeoutMs;
     }
 
     private void updateWorldMapIcons() {
@@ -488,6 +509,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private void completeTask() {
         currentSlayerTask = null;
+        this.taskStartTime = 0; // Reset timer
+
         targets.clear();
 
         worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);

@@ -24,10 +24,7 @@
  */
 package com.mathiaslj.configurableslayertaskoverlay;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.*;
 
 import java.awt.*;
 
@@ -239,6 +236,17 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
     default boolean useShortestPath() {
         return false;
     }
+
+    @Range(min = 0, max = 600)
+    @Units(Units.SECONDS)
+    @ConfigItem(
+            keyName = "overlayTimeout",
+            name = "Task timeout",
+            description = "Time in seconds before overlay and world map icon disappears (0 to disable).<br/>" +
+                    "Use 'check' on slayer helm or enchanted gem to re-activate plugin for task.",
+            section = generalSettings,
+            position = 4)
+    default int overlayTimeout() { return 60; }
 
     /*
     // Highlight settings

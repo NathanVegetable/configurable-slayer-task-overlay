@@ -772,10 +772,18 @@ public class SlayerTaskRegistry {
         String tolower = npcName.toLowerCase();
         String pluralis = tolower + "s";
 
-        // Try exact match first, then pluralis form
         SlayerTask task = tasks.get(tolower);
         if (task == null) {
             task = tasks.get(pluralis);
+        }
+        if (task == null) {
+            String normalized = tolower.replace(" ", "");
+            for (Map.Entry<String, SlayerTask> entry : tasks.entrySet()) {
+                if (entry.getKey().replace(" ", "").equals(normalized)) {
+                    task = entry.getValue();
+                    break;
+                }
+            }
         }
         return task;
     }

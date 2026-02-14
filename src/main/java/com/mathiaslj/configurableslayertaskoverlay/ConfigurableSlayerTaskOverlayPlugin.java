@@ -595,7 +595,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private void completeTask() {
         currentSlayerTask = null;
-        this.taskStartTime = 0;
+        this.taskStartTime = 0; // Reset timer
 
         targets.clear();
 

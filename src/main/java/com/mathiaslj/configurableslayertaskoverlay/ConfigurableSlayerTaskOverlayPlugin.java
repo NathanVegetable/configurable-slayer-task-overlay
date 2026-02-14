@@ -518,8 +518,10 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             updateWorldMapIcons();
             updateShortestPath();
 
+            // Target NPC's visible to the player in case they are already at the location
             Player player = client.getLocalPlayer();
 
+            // Player is null when you select a task from the debug menu whe not logged in
             if (player != null) {
                 WorldView worldView = player.getWorldView();
 

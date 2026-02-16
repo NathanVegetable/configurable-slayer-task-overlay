@@ -178,12 +178,14 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick gameTick) {
+        // Check if task has timed out
         if (currentSlayerTask != null && hasTaskTimedOut()) {
             completeTask();
             return;
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
+        // Check if current widget is a slayer master
         if (chatBoxNpcName != null && currentSlayerTask != null) {
             String npcName = chatBoxNpcName.getText();
             if (npcName.equalsIgnoreCase("turael") ||

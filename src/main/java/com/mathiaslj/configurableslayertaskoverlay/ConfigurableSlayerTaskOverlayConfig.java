@@ -1401,7 +1401,7 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
     String wallBeastsSettings = "wallBeasts";
 
     @ConfigItem(keyName = "Wall Beasts", name = "Wall Beasts information", description = "Create individual bullet points in overlay, one per line", section = wallBeastsSettings, position = 0)
-    default String wallBeastsInfo() { return DORGESHKAAN_DUNGEON; }
+    default String wallBeastsInfo() { return "BRING: Light source\nGames Necklace (Tears of Guthix)"; }
 
     @ConfigItem(keyName = "wallBeastsDisableBox", name = "Disable information box", description = "Disable information box specifically for Wall Beasts", section = wallBeastsSettings, position = 1)
     default boolean wallBeastsDisableBox() { return false; }

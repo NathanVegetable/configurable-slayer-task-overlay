@@ -30,7 +30,6 @@ import com.mathiaslj.configurableslayertaskoverlay.models.NpcLocation;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.coords.WorldArea;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -80,20 +79,7 @@ public class SlayerTaskOverlay extends OverlayPanel {
             return null;
         }
 
-        boolean inArea = false;
-
-        for (NpcLocation npcLocation : task.getLocations()) {
-            for (WorldArea worldArea : npcLocation.getWorldAreas()) {
-                if (worldArea.contains(client.getLocalPlayer().getWorldLocation())) {
-                    inArea = true;
-                }
-            }
-        }
-
-        // If disabled, set inArea to false so the information box will always be drawn
-        if (!config.automaticallyHideInformationBox()) {
-            inArea = false;
-        }
+        boolean inArea = config.automaticallyHideInformationBox() && plugin.isPlayerInTaskArea();
 
         if (!inArea) {
             for (NpcLocation npcLocation : task.getLocations()) {

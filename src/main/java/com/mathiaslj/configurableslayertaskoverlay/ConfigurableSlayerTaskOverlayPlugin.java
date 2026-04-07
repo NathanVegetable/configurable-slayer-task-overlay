@@ -26,6 +26,7 @@ package com.mathiaslj.configurableslayertaskoverlay;
 
 import javax.inject.Inject;
 
+import com.mathiaslj.configurableslayertaskoverlay.models.NpcLocation;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskOverlay;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskWorldMapPoint;
@@ -41,6 +42,7 @@ import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
+import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
@@ -86,6 +88,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private static final Pattern KONAR_CHAT_PATTERN = Pattern.compile(".+ bring(?:ing)? balance to (?:\\d+ )?(?<name>.+?)s?(?:,|;|in).+");
 
     private long taskStartTime = 0;
+    private boolean playerInTaskArea = false;
 
     private final Set<NPC> targets = new HashSet<>();
 
@@ -145,10 +148,19 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick gameTick) {
-        // Check if task has timed out
         if (currentSlayerTask != null && hasTaskTimedOut()) {
             completeTask();
             return;
+        }
+
+        if (config.useShortestPath() && currentSlayerTask != null) {
+            boolean inArea = isPlayerInTaskArea();
+            if (inArea && !playerInTaskArea) {
+                clearShortestPath();
+            } else if (!inArea && playerInTaskArea) {
+                updateShortestPath();
+            }
+            playerInTaskArea = inArea;
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
@@ -489,6 +501,22 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
     }
 
+    public boolean isPlayerInTaskArea() {
+        if (currentSlayerTask == null || client.getLocalPlayer() == null) {
+            return false;
+        }
+
+        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+        for (NpcLocation npcLocation : currentSlayerTask.getLocations()) {
+            for (WorldArea worldArea : npcLocation.getWorldAreas()) {
+                if (worldArea.contains(playerLocation)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void clearShortestPath() {
         Map<String, Object> data = new HashMap<>();
         eventBus.post(new PluginMessage("shortestpath", "clear", data));
@@ -510,6 +538,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private void completeTask() {
         currentSlayerTask = null;
         this.taskStartTime = 0; // Reset timer
+        this.playerInTaskArea = false;
 
         targets.clear();
 

@@ -537,10 +537,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private void completeTask() {
         currentSlayerTask = null;
-        this.taskStartTime = 0; // Reset timer
+        this.taskStartTime = 0;
         this.playerInTaskArea = false;
 
         targets.clear();
+        clearShortestPath();
 
         worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);
     }

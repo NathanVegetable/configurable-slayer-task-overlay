@@ -35,6 +35,7 @@ import com.google.inject.Provides;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
@@ -86,7 +87,8 @@ import java.util.List;
 )
 public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private long taskStartTime = 0;
-    private boolean playerInTaskArea = false;
+    @Getter
+    private boolean taskOverlayDismissed = false;
     private boolean loginFlag = false;
 
     private final Set<NPC> targets = new HashSet<>();
@@ -186,14 +188,14 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return;
         }
 
-        if (config.useShortestPath() && currentSlayerTask != null) {
-            boolean inArea = isPlayerInTaskArea();
-            if (inArea && !playerInTaskArea) {
+        if (currentSlayerTask != null && !taskOverlayDismissed) {
+            boolean reachedArea = config.automaticallyHideInformationBox() && isPlayerInTaskArea();
+            boolean startedFighting = config.hideWhenFightingTask() && isPlayerFightingTask();
+
+            if (reachedArea || startedFighting) {
+                taskOverlayDismissed = true;
                 clearShortestPath();
-            } else if (!inArea && playerInTaskArea) {
-                updateShortestPath();
             }
-            playerInTaskArea = inArea;
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
@@ -591,7 +593,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
     }
 
-    public boolean isPlayerInTaskArea() {
+    private boolean isPlayerInTaskArea() {
         if (currentSlayerTask == null || client.getLocalPlayer() == null) {
             return false;
         }
@@ -605,6 +607,20 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             }
         }
         return false;
+    }
+
+    private boolean isPlayerFightingTask() {
+        if (currentSlayerTask == null || client.getLocalPlayer() == null) {
+            return false;
+        }
+
+        Actor interacting = client.getLocalPlayer().getInteracting();
+        if (!(interacting instanceof NPC)) {
+            return false;
+        }
+
+        int npcId = ((NPC) interacting).getId();
+        return currentSlayerTask.getNpcIds().contains(npcId);
     }
 
     private void clearShortestPath() {
@@ -628,7 +644,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private void completeTask() {
         currentSlayerTask = null;
         this.taskStartTime = 0;
-        this.playerInTaskArea = false;
+        this.taskOverlayDismissed = false;
 
         targets.clear();
         clearShortestPath();

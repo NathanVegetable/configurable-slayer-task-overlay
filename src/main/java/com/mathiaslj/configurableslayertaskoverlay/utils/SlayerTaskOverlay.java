@@ -79,9 +79,9 @@ public class SlayerTaskOverlay extends OverlayPanel {
             return null;
         }
 
-        boolean inArea = config.automaticallyHideInformationBox() && plugin.isPlayerInTaskArea();
+        boolean shouldHide = plugin.isTaskOverlayDismissed();
 
-        if (!inArea) {
+        if (!shouldHide) {
             for (NpcLocation npcLocation : task.getLocations()) {
                 panelComponent.getChildren().add(LineComponent.builder().left(npcLocation.getName()).leftColor(Color.YELLOW).build());
 

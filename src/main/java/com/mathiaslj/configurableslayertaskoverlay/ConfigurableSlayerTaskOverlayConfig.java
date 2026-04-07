@@ -214,6 +214,17 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
 
     @ConfigItem(
             position = 2,
+            keyName = "hideWhenFightingTask",
+            name = "Hide when fighting task NPC",
+            description = "Hides the information box and shortest path while you are in combat with your slayer task NPC.",
+            section = generalSettings
+    )
+    default boolean hideWhenFightingTask() {
+        return true;
+    }
+
+    @ConfigItem(
+            position = 3,
             keyName = "displayMapIcon",
             name = "Enable world map icon",
             description = "Displays an icon on the world map where the current task is located.<br/>" +
@@ -225,7 +236,7 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
     }
 
     @ConfigItem(
-            position = 3,
+            position = 4,
             keyName = "useShortestPath",
             name = "Use 'Shortest Path' plugin",
             description = "Draws the shortest path to the assigned task.<br/>" +
@@ -245,7 +256,7 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
             description = "Time in seconds before overlay and world map icon disappears (0 to disable).<br/>" +
                     "Use 'check' on slayer helm or enchanted gem to re-activate plugin for task.",
             section = generalSettings,
-            position = 4)
+            position = 5)
     default int overlayTimeout() { return 60; }
 
     /*

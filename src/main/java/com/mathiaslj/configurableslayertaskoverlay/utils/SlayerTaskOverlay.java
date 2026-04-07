@@ -29,7 +29,6 @@ import com.mathiaslj.configurableslayertaskoverlay.ConfigurableSlayerTaskOverlay
 import com.mathiaslj.configurableslayertaskoverlay.models.NpcLocation;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -42,18 +41,15 @@ import java.awt.Color;
 
 @Slf4j
 public class SlayerTaskOverlay extends OverlayPanel {
-    private final Client client;
     private final ConfigurableSlayerTaskOverlayPlugin plugin;
     private final ConfigurableSlayerTaskOverlayConfig config;
     private final ConfigManager configManager;
 
     @Inject
     public SlayerTaskOverlay(
-            Client client,
             ConfigurableSlayerTaskOverlayPlugin ConfigurableSlayerTaskOverlayPlugin,
             ConfigurableSlayerTaskOverlayConfig config,
             ConfigManager configManager) {
-        this.client = client;
         this.plugin = ConfigurableSlayerTaskOverlayPlugin;
         this.config = config;
         this.configManager = configManager;

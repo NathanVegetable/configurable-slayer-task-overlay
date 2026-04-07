@@ -642,7 +642,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private void updateShortestPath()
     {
-        if (config.useShortestPath() && currentSlayerTask != null)
+        if (config.useShortestPath() && currentSlayerTask != null && !taskOverlayDismissed)
         {
             WorldPoint location = currentSlayerTask.getShortestPathWorldPoint();
             setShortestPath(location);

@@ -26,7 +26,6 @@ package com.mathiaslj.configurableslayertaskoverlay;
 
 import javax.inject.Inject;
 
-import com.mathiaslj.configurableslayertaskoverlay.models.NpcLocation;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskOverlay;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskWorldMapPoint;
@@ -43,7 +42,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
-import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.DBTableID;
@@ -189,7 +187,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
         if (currentSlayerTask != null && !taskOverlayDismissed) {
-            boolean reachedArea = config.automaticallyHideInformationBox() && isPlayerInTaskArea();
+            boolean reachedArea = config.taskProximityDistance() > 0 && isPlayerInTaskArea();
             boolean startedFighting = config.hideWhenFightingTask() && isPlayerFightingTask();
 
             if (reachedArea || startedFighting) {
@@ -611,11 +609,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
         WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-        for (NpcLocation npcLocation : currentSlayerTask.getLocations()) {
-            for (WorldArea worldArea : npcLocation.getWorldAreas()) {
-                if (worldArea.contains(playerLocation)) {
-                    return true;
-                }
+        int proximity = config.taskProximityDistance();
+        for (WorldPoint taskLocation : currentSlayerTask.getWorldMapLocations()) {
+            if (taskLocation.getPlane() == playerLocation.getPlane()
+                    && playerLocation.distanceTo(taskLocation) <= proximity) {
+                return true;
             }
         }
         return false;

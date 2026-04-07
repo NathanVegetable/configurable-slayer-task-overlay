@@ -200,17 +200,16 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
         return true;
     }
 
+    @Range(min = 0, max = 100)
+    @Units("tiles")
     @ConfigItem(
             position = 1,
-            keyName = "automaticallyHideInformationBox",
-            name = "Automatically hide information box",
-            description = "Whether to automatically hide the information box when you get to the location of your current task.<br/>" +
-                    "Change the location of your task by right-clicking the world map and choosing 'Set [slayer task] slayer task location'",
+            keyName = "taskProximityDistance",
+            name = "Task proximity distance",
+            description = "Dismiss the overlay and path when within this many tiles of the task location (0 to disable).",
             section = generalSettings
     )
-    default boolean automaticallyHideInformationBox() {
-        return true;
-    }
+    default int taskProximityDistance() { return 10; }
 
     @ConfigItem(
             position = 2,

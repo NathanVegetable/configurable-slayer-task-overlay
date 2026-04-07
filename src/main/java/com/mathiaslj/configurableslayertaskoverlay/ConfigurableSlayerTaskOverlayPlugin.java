@@ -45,8 +45,13 @@ import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -69,8 +74,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,13 +85,9 @@ import java.util.List;
         tags = {"slayer", "overlay", "task", "configurable", "world icon", "shortest path"}
 )
 public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
-    private static final Pattern SLAYER_ASSIGN_MESSAGE = Pattern.compile(".*new task is to kill \\d+ (?<name>.+?)s?\\..*");
-    private static final Pattern SLAYER_CURRENT_MESSAGE = Pattern.compile(".*still hunting (?<name>.+?)s?[,;].*");
-    private static final Pattern SLAYER_CURRENT_CHAT_MESSAGE = Pattern.compile("You're assigned to kill (?<name>.+?)s?[,;] only \\d+ more to go\\.");
-    private static final Pattern KONAR_CHAT_PATTERN = Pattern.compile(".+ bring(?:ing)? balance to (?:\\d+ )?(?<name>.+?)s?(?:,|;|in).+");
-
     private long taskStartTime = 0;
     private boolean playerInTaskArea = false;
+    private boolean loginFlag = false;
 
     private final Set<NPC> targets = new HashSet<>();
 
@@ -136,6 +135,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             String saved = configManager.getConfiguration("configurable-slayer-task-overlay", "savedTaskLocations");
             return parseSavedLocations(saved);
         });
+
+        if (client.getGameState() == net.runelite.api.GameState.LOGGED_IN) {
+            loginFlag = true;
+            updateTaskFromVarbits();
+        }
     }
 
     @Override
@@ -144,6 +148,35 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);
 
         completeTask();
+    }
+
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged event) {
+        switch (event.getGameState()) {
+            case HOPPING:
+            case LOGGING_IN:
+            case CONNECTION_LOST:
+                loginFlag = true;
+                targets.clear();
+                break;
+            case LOGGED_IN:
+                loginFlag = true;
+                break;
+        }
+    }
+
+    @Subscribe
+    public void onVarbitChanged(VarbitChanged varbitChanged) {
+        int varpId = varbitChanged.getVarpId();
+        int varbitId = varbitChanged.getVarbitId();
+
+        if (varpId == VarPlayerID.SLAYER_COUNT
+            || varpId == VarPlayerID.SLAYER_AREA
+            || varpId == VarPlayerID.SLAYER_TARGET
+            || varbitId == VarbitID.SLAYER_TARGET_BOSSID
+            || varpId == VarPlayerID.SLAYER_COUNT_ORIGINAL) {
+            updateTaskFromVarbits();
+        }
     }
 
     @Subscribe
@@ -164,32 +197,27 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
-        Widget chatBoxNpcText = client.getWidget(InterfaceID.ChatLeft.TEXT);
-
         // Check if current widget is a slayer master
-        if (chatBoxNpcName != null && chatBoxNpcText != null &&
-                (chatBoxNpcName.getText().equalsIgnoreCase("turael") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("aya") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("spria") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("krystilia") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("mazchna") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("achtryn") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("vannaka") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("chaeldar") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("konar quo maten") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("nieve") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("steve") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("duradel") ||
-                        chatBoxNpcName.getText().equalsIgnoreCase("kuradel")
-                )
-        ) {
-            String npcText = Text.sanitizeMultilineText(chatBoxNpcText.getText());
-            String taskName = getTaskName(npcText);
-
-            if (taskName != null) {
-                startTask(taskName);
+        if (chatBoxNpcName != null && currentSlayerTask != null) {
+            String npcName = chatBoxNpcName.getText();
+            if (npcName.equalsIgnoreCase("turael") ||
+                    npcName.equalsIgnoreCase("aya") ||
+                    npcName.equalsIgnoreCase("spria") ||
+                    npcName.equalsIgnoreCase("krystilia") ||
+                    npcName.equalsIgnoreCase("mazchna") ||
+                    npcName.equalsIgnoreCase("achtryn") ||
+                    npcName.equalsIgnoreCase("vannaka") ||
+                    npcName.equalsIgnoreCase("chaeldar") ||
+                    npcName.equalsIgnoreCase("konar quo maten") ||
+                    npcName.equalsIgnoreCase("nieve") ||
+                    npcName.equalsIgnoreCase("steve") ||
+                    npcName.equalsIgnoreCase("duradel") ||
+                    npcName.equalsIgnoreCase("kuradel")) {
+                refreshTask();
             }
         }
+
+        loginFlag = false;
     }
 
     @Subscribe
@@ -200,16 +228,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         String chatMessage = Text.removeTags(event.getMessage());
 
-        if (currentSlayerTask == null) {
-            String taskName = getTaskName(chatMessage);
-
-            if (taskName != null) {
-                startTask(taskName);
-            }
-        } else {
-            if (chatMessage.startsWith("You've completed") && chatMessage.toLowerCase().contains("slayer master")) {
-                completeTask();
-            }
+        if (currentSlayerTask != null && chatMessage.startsWith("You've completed") && chatMessage.toLowerCase().contains("slayer master")) {
+            completeTask();
         }
     }
 
@@ -405,6 +425,35 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
+        if ((event.getMenuAction() == MenuAction.CC_OP || event.getMenuAction() == MenuAction.CC_OP_LOW_PRIORITY)
+            && event.getMenuOption().equals("Check")) {
+            Widget w = client.getWidget(event.getParam1());
+            if (w == null) {
+                return;
+            }
+
+            if (event.getParam0() != -1) {
+                w = w.getChild(event.getParam0());
+                if (w == null) {
+                    return;
+                }
+            }
+
+            int itemId = w.getItemId();
+            for (Widget child : w.getDynamicChildren()) {
+                if (itemId == -1) {
+                    itemId = child.getItemId();
+                }
+            }
+
+            itemId = ItemVariationMapping.map(itemId);
+            if (itemId == ItemID.SLAYER_HELM || itemId == ItemID.SLAYER_RING_8 || itemId == ItemID.SLAYER_GEM) {
+                log.debug("Checked slayer item - refreshing task overlay");
+                refreshTask();
+            }
+            return;
+        }
+
         if (!event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_ONE) && !event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_TWO)) {
             return;
         }
@@ -430,6 +479,47 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     @Provides
     ConfigurableSlayerTaskOverlayConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(ConfigurableSlayerTaskOverlayConfig.class);
+    }
+
+    private void updateTaskFromVarbits() {
+        int amount = client.getVarpValue(VarPlayerID.SLAYER_COUNT);
+
+        if (amount > 0) {
+            int taskId = client.getVarpValue(VarPlayerID.SLAYER_TARGET);
+
+            int taskDBRow;
+            if (taskId == 98) {
+                var bossRows = client.getDBRowsByValue(
+                    DBTableID.SlayerTaskSublist.ID,
+                    DBTableID.SlayerTaskSublist.COL_TASK_SUBTABLE_ID,
+                    0,
+                    client.getVarbitValue(VarbitID.SLAYER_TARGET_BOSSID));
+
+                if (bossRows.isEmpty()) {
+                    return;
+                }
+                taskDBRow = (Integer) client.getDBTableField(bossRows.get(0), DBTableID.SlayerTaskSublist.COL_TASK, 0)[0];
+            } else {
+                var taskRows = client.getDBRowsByValue(DBTableID.SlayerTask.ID, DBTableID.SlayerTask.COL_ID, 0, taskId);
+                if (taskRows.isEmpty()) {
+                    return;
+                }
+                taskDBRow = taskRows.get(0);
+            }
+
+            var taskName = (String) client.getDBTableField(taskDBRow, DBTableID.SlayerTask.COL_NAME_UPPERCASE, 0)[0];
+
+            if (loginFlag) {
+                log.debug("Sync slayer task from varbits on login: {}", taskName);
+                startTask(taskName);
+            } else if (currentSlayerTask == null || !taskName.equalsIgnoreCase(currentSlayerTask.getName())) {
+                log.debug("New slayer task detected from varbits: {}", taskName);
+                startTask(taskName);
+            }
+        } else if (currentSlayerTask != null) {
+            log.debug("Slayer task completed (varbits show 0 remaining)");
+            completeTask();
+        }
     }
 
     private void startTask(String taskName) {
@@ -546,19 +636,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);
     }
 
-    private String getTaskName(String npcText) {
-        Pattern[] patterns = {SLAYER_ASSIGN_MESSAGE, SLAYER_CURRENT_MESSAGE, SLAYER_CURRENT_CHAT_MESSAGE,
-                KONAR_CHAT_PATTERN};
-
-        for (Pattern pattern : patterns) {
-            Matcher matcher = pattern.matcher(npcText);
-
-            if (matcher.find()) {
-                return matcher.group("name");
-            }
+    private void refreshTask() {
+        if (currentSlayerTask != null) {
+            this.taskStartTime = System.currentTimeMillis();
+            log.debug("Refreshed task timer for: {}", currentSlayerTask.getName());
         }
-
-        return null;
     }
 
     private void setShortestPath(WorldPoint target) {

@@ -232,6 +232,13 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         if (currentSlayerTask != null && chatMessage.startsWith("You've completed") && chatMessage.toLowerCase().contains("slayer master")) {
             completeTask();
+            return;
+        }
+
+        // "Check" on slayer gem/helm — refresh timer and re-show overlay
+        if (chatMessage.startsWith("You're assigned to kill")) {
+            taskOverlayDismissed = false;
+            updateTaskFromVarbits();
         }
     }
 

@@ -187,7 +187,7 @@ public class SlayerTaskRegistry {
         WorldPoint wolvesLocation = savedLocations.getOrDefault("wolves", new WorldPoint(2836, 3496, 0));
         WorldPoint wyrmsLocation = savedLocations.getOrDefault("wyrms", new WorldPoint(1272, 10183, 0));
         WorldPoint zombiesLocation = savedLocations.getOrDefault("zombies", Alices_farm);
-        WorldPoint zygomitesLocation = savedLocations.getOrDefault("mutated zygomites", new WorldPoint(2417, 4465, 0));
+        WorldPoint zygomitesLocation = savedLocations.getOrDefault("zygomites", new WorldPoint(2417, 4465, 0));
 
         tasks = Map.ofEntries(
                 Map.entry("aberrant spectres", new SlayerTask("Aberrant spectres", List.of(NpcID.SLAYER_ABBERANT_SPECTRE_1),
@@ -760,9 +760,9 @@ public class SlayerTaskRegistry {
                         createNpcLocationsFromWorldPoint("Zombies", zombiesLocation, config.zombiesInfo().split("\n"))
                 )),
 
-                Map.entry("mutated zygomites", new SlayerTask("Mutated zygomites", List.of(1),
+                Map.entry("zygomites", new SlayerTask("Zygomites", List.of(1),
                         Collections.singletonList(zygomitesLocation),
-                        createNpcLocationsFromWorldPoint("Mutated zygomites", zygomitesLocation, config.zygomitesInfo().split("\n"))
+                        createNpcLocationsFromWorldPoint("Zygomites", zygomitesLocation, config.zygomitesInfo().split("\n"))
                 ))
         );
     }
@@ -772,15 +772,13 @@ public class SlayerTaskRegistry {
         String tolower = npcName.toLowerCase();
         String pluralis = tolower + "s";
 
-        // Try exact match first, then pluralis form, then normalize spaces
         SlayerTask task = tasks.get(tolower);
         if (task == null) {
             task = tasks.get(pluralis);
         }
         if (task == null) {
-            String normalized = tolower.replace(" ", "");
             for (Map.Entry<String, SlayerTask> entry : tasks.entrySet()) {
-                if (entry.getKey().replace(" ", "").equals(normalized)) {
+                if (entry.getKey().contains(tolower) || tolower.contains(entry.getKey())) {
                     task = entry.getValue();
                     break;
                 }

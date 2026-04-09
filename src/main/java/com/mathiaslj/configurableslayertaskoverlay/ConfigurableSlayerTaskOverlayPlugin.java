@@ -192,8 +192,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
             if (reachedArea || startedFighting) {
                 taskOverlayDismissed = true;
-                clearShortestPath();
             }
+        }
+
+        if (taskOverlayDismissed && config.useShortestPath()) {
+            clearShortestPath();
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);

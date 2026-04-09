@@ -629,8 +629,14 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return false;
         }
 
-        int npcId = ((NPC) interacting).getId();
-        return currentSlayerTask.getNpcIds().contains(npcId);
+        NPC npc = (NPC) interacting;
+        String npcName = npc.getName();
+        if (npcName == null) {
+            return false;
+        }
+
+        String taskName = currentSlayerTask.getName().toLowerCase().replaceAll("s$", "");
+        return npcName.toLowerCase().contains(taskName);
     }
 
     private void clearShortestPath() {

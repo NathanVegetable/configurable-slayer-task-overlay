@@ -87,6 +87,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private long taskStartTime = 0;
     @Getter
     private boolean taskOverlayDismissed = false;
+    private WorldPoint shortestPathTarget = null;
     private boolean loginFlag = false;
 
     private final Set<NPC> targets = new HashSet<>();
@@ -643,6 +644,10 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     }
 
     private void clearShortestPath() {
+        if (shortestPathTarget == null) {
+            return;
+        }
+        shortestPathTarget = null;
         Map<String, Object> data = new HashMap<>();
         eventBus.post(new PluginMessage("shortestpath", "clear", data));
     }
@@ -683,6 +688,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return;
         }
 
+        shortestPathTarget = target;
         Map<String, Object> data = new HashMap<>();
         data.put("target", target);
         eventBus.post(new PluginMessage("shortestpath", "path", data));

@@ -522,15 +522,21 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
             if (loginFlag) {
                 log.debug("Sync slayer task from varbits on login: {}", taskName);
-                // Silently restore task state without showing overlay/path
                 SlayerTask lookupSlayerTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
                 if (lookupSlayerTask != null) {
                     this.currentSlayerTask = lookupSlayerTask;
                     this.taskOverlayDismissed = true;
                 }
-            } else if (currentSlayerTask == null || !taskName.equalsIgnoreCase(currentSlayerTask.getName())) {
+            } else if (currentSlayerTask == null) {
                 log.debug("New slayer task detected from varbits: {}", taskName);
                 startTask(taskName);
+            } else {
+                // Kill count changed on existing task — check if it's actually a different task
+                SlayerTask lookupTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
+                if (lookupTask != null && lookupTask != currentSlayerTask) {
+                    log.debug("Task changed from {} to {}", currentSlayerTask.getName(), lookupTask.getName());
+                    startTask(taskName);
+                }
             }
         } else if (currentSlayerTask != null) {
             log.debug("Slayer task completed (varbits show 0 remaining)");

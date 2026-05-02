@@ -533,7 +533,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             } else {
                 // Kill count changed on existing task — check if it's actually a different task
                 SlayerTask lookupTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
-                if (lookupTask != null && lookupTask != currentSlayerTask) {
+                if (lookupTask != null && !lookupTask.getName().equals(currentSlayerTask.getName())) {
                     log.debug("Task changed from {} to {}", currentSlayerTask.getName(), lookupTask.getName());
                     startTask(taskName);
                 }

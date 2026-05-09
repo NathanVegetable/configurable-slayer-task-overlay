@@ -50,6 +50,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -125,6 +126,9 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     @Inject
     private ConfigManager configManager;
 
+    @Inject
+    private ClientThread clientThread;
+
     @Getter
     private SlayerTask currentSlayerTask;
 
@@ -139,7 +143,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         if (client.getGameState() == net.runelite.api.GameState.LOGGED_IN) {
             loginFlag = true;
-            updateTaskFromVarbits();
+            clientThread.invokeLater(this::updateTaskFromVarbits);
         }
     }
 
@@ -176,7 +180,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             || varpId == VarPlayerID.SLAYER_TARGET
             || varbitId == VarbitID.SLAYER_TARGET_BOSSID
             || varpId == VarPlayerID.SLAYER_COUNT_ORIGINAL) {
-            updateTaskFromVarbits();
+            clientThread.invokeLater(this::updateTaskFromVarbits);
         }
     }
 

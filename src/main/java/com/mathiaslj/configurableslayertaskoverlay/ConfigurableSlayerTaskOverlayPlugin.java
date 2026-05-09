@@ -241,10 +241,11 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return;
         }
 
-        // "Check" on slayer gem/helm — refresh timer and re-show overlay
         if (chatMessage.startsWith("You're assigned to kill")) {
-            taskOverlayDismissed = false;
             updateTaskFromVarbits();
+            if (!isPlayerInTaskArea() && !isPlayerFightingTask()) {
+                taskOverlayDismissed = false;
+            }
         }
     }
 

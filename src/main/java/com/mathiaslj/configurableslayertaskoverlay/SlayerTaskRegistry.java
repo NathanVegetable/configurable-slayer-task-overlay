@@ -777,8 +777,9 @@ public class SlayerTaskRegistry {
             task = tasks.get(pluralis);
         }
         if (task == null) {
+            String normalized = tolower.replace(" ", "");
             for (Map.Entry<String, SlayerTask> entry : tasks.entrySet()) {
-                if (entry.getKey().contains(tolower) || tolower.contains(entry.getKey())) {
+                if (entry.getKey().replace(" ", "").equals(normalized)) {
                     task = entry.getValue();
                     break;
                 }

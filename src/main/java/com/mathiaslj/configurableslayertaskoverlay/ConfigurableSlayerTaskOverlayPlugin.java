@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskOverlay;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskWorldMapPoint;
+import com.mathiaslj.configurableslayertaskoverlay.vendor.Task;
 import com.google.inject.Provides;
 
 
@@ -39,6 +40,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
 import net.runelite.api.Player;
 import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
@@ -73,10 +75,13 @@ import java.awt.datatransfer.StringSelection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @PluginDescriptor(
@@ -92,6 +97,9 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private boolean loginFlag = false;
 
     private final Set<NPC> targets = new HashSet<>();
+
+    private final List<Pattern> currentTaskTargetPatterns = new ArrayList<>();
+    private String currentTaskPatternsFor = null;
 
     private final String DEBUG_MENU_WORLD_POINT_ONE = "Set WorldPoint1 (Turael Skipping)";
     private final String DEBUG_MENU_WORLD_POINT_TWO = "Set WorldPoint2 (Turael Skipping)";
@@ -645,13 +653,65 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
         NPC npc = (NPC) interacting;
-        String npcName = npc.getName();
-        if (npcName == null) {
+        NPCComposition composition = npc.getTransformedComposition();
+        if (composition == null) {
             return false;
         }
 
-        String taskName = currentSlayerTask.getName().toLowerCase().replaceAll("s$", "");
-        return npcName.toLowerCase().contains(taskName);
+        rebuildTaskTargetPatterns();
+        if (currentTaskTargetPatterns.isEmpty()) {
+            return false;
+        }
+
+        String name = composition.getName().replace(' ', ' ').toLowerCase();
+        List<String> actions = Arrays.asList(composition.getActions());
+        for (Pattern target : currentTaskTargetPatterns) {
+            if (target.matcher(name).find()
+                    && (actions.contains("Attack") || actions.contains("Pick"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void rebuildTaskTargetPatterns() {
+        String displayName = currentSlayerTask == null ? null : currentSlayerTask.getName();
+        if (Objects.equals(displayName, currentTaskPatternsFor)) {
+            return;
+        }
+        currentTaskPatternsFor = displayName;
+        currentTaskTargetPatterns.clear();
+        if (displayName == null) {
+            return;
+        }
+
+        Task task = resolveVendoredTask(displayName);
+        if (task != null) {
+            for (String targetName : task.getTargetNames()) {
+                currentTaskTargetPatterns.add(targetNamePattern(targetName));
+            }
+            currentTaskTargetPatterns.add(targetNamePattern(task.getName().replaceAll("s$", "")));
+        } else {
+            currentTaskTargetPatterns.add(targetNamePattern(displayName.replaceAll("s$", "")));
+        }
+    }
+
+    private static Task resolveVendoredTask(String displayName) {
+        Task exact = Task.getTask(displayName);
+        if (exact != null) {
+            return exact;
+        }
+        String normalized = displayName.toLowerCase().replace(" ", "");
+        for (Task task : Task.values()) {
+            if (task.getName().toLowerCase().replace(" ", "").equals(normalized)) {
+                return task;
+            }
+        }
+        return null;
+    }
+
+    private static Pattern targetNamePattern(final String targetName) {
+        return Pattern.compile("(?:\\s|^)" + targetName + "(?:\\s|$)", Pattern.CASE_INSENSITIVE);
     }
 
     private void clearShortestPath() {

@@ -41,7 +41,6 @@ import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
-import net.runelite.api.Player;
 import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
@@ -58,7 +57,6 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.game.npcoverlay.NpcOverlayService;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -73,10 +71,8 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -95,8 +91,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private boolean taskOverlayDismissed = false;
     private WorldPoint shortestPathTarget = null;
     private boolean loginFlag = false;
-
-    private final Set<NPC> targets = new HashSet<>();
 
     private final List<Pattern> currentTaskTargetPatterns = new ArrayList<>();
     private String currentTaskPatternsFor = null;
@@ -118,9 +112,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Inject
     private OverlayManager overlayManager;
-
-    @Inject
-    private NpcOverlayService npcOverlayService;
 
     @Inject
     private WorldMapPointManager worldMapPointManager;
@@ -170,7 +161,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             case LOGGING_IN:
             case CONNECTION_LOST:
                 loginFlag = true;
-                targets.clear();
                 break;
             case LOGGED_IN:
                 loginFlag = true;
@@ -566,22 +556,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
             updateWorldMapIcons();
             updateShortestPath();
-
-            // Target NPC's visible to the player in case they are already at the location
-            Player player = client.getLocalPlayer();
-
-            // Player is null when you select a task from the debug menu whe not logged in
-            if (player != null) {
-                WorldView worldView = player.getWorldView();
-
-                for (NPC npc : worldView.npcs()) {
-                    for (int targetNpcId : currentSlayerTask.getNpcIds()) {
-                        if (npc.getId() == targetNpcId) {
-                            targets.add(npc);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -741,7 +715,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         this.taskStartTime = 0;
         this.taskOverlayDismissed = false;
 
-        targets.clear();
         clearShortestPath();
 
         worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);

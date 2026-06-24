@@ -32,42 +32,37 @@ import java.util.List;
 @Getter
 public class SlayerTask {
     private final String name;
-    private final List<Integer> npcIds;
     private final List<WorldPoint> worldMapLocations;
     private final List<NpcLocation> locations;
     private final String information;
     private final WorldPoint shortestPathWorldPoint;
 
-    public SlayerTask(String name, List<Integer> npcIds, List<WorldPoint> worldMapLocations, List<NpcLocation> locations) {
+    public SlayerTask(String name, List<WorldPoint> worldMapLocations, List<NpcLocation> locations) {
         this.name = name;
-        this.npcIds = npcIds;
         this.worldMapLocations = worldMapLocations;
         this.locations = locations;
         this.information = null;
         this.shortestPathWorldPoint = worldMapLocations.get(worldMapLocations.size() - 1);
     }
 
-    public SlayerTask(String name, List<Integer> npcIds, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, String information) {
+    public SlayerTask(String name, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, String information) {
         this.name = name;
-        this.npcIds = npcIds;
         this.worldMapLocations = worldMapLocations;
         this.locations = locations;
         this.information = information;
         this.shortestPathWorldPoint = worldMapLocations.get(worldMapLocations.size() - 1);
     }
 
-    public SlayerTask(String name, List<Integer> npcIds, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, WorldPoint shortestPathWorldPoint) {
+    public SlayerTask(String name, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, WorldPoint shortestPathWorldPoint) {
         this.name = name;
-        this.npcIds = npcIds;
         this.worldMapLocations = worldMapLocations;
         this.locations = locations;
         this.information = null;
         this.shortestPathWorldPoint = shortestPathWorldPoint;
     }
 
-    public SlayerTask(String name, List<Integer> npcIds, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, String information, WorldPoint shortestPathWorldPoint) {
+    public SlayerTask(String name, List<WorldPoint> worldMapLocations, List<NpcLocation> locations, String information, WorldPoint shortestPathWorldPoint) {
         this.name = name;
-        this.npcIds = npcIds;
         this.worldMapLocations = worldMapLocations;
         this.locations = locations;
         this.information = information;

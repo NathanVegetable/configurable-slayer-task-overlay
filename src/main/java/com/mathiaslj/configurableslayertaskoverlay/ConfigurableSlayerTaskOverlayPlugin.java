@@ -104,7 +104,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private static final Set<String> SLAYER_MASTER_NAMES = ImmutableSet.of(
             "turael", "aya", "spria", "krystilia", "mazchna", "achtryn", "vannaka",
-            "chaeldar", "konar quo maten", "nieve", "steve", "duradel", "kuradel");
+            "chaeldar", "konar quo maten", "nieve", "steve", "duradel", "kuradal", "mortimer");
 
     @Getter
     private Guidance guidance = Guidance.NONE;

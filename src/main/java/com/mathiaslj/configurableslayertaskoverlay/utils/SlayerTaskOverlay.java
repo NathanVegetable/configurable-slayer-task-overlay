@@ -64,6 +64,10 @@ public class SlayerTaskOverlay extends OverlayPanel {
             return null;
         }
 
+        if (plugin.getGuidance() != ConfigurableSlayerTaskOverlayPlugin.Guidance.SHOWING) {
+            return null;
+        }
+
         SlayerTask task = plugin.getCurrentSlayerTask();
 
         if (task == null) {
@@ -75,21 +79,17 @@ public class SlayerTaskOverlay extends OverlayPanel {
             return null;
         }
 
-        boolean shouldHide = plugin.isTaskOverlayDismissed();
+        for (NpcLocation npcLocation : task.getLocations()) {
+            panelComponent.getChildren().add(LineComponent.builder().left(npcLocation.getName()).leftColor(Color.YELLOW).build());
 
-        if (!shouldHide) {
-            for (NpcLocation npcLocation : task.getLocations()) {
-                panelComponent.getChildren().add(LineComponent.builder().left(npcLocation.getName()).leftColor(Color.YELLOW).build());
-
-                for (String teleport : npcLocation.getTeleports()) {
-                    panelComponent.getChildren().add(LineComponent.builder().left("- " + teleport).build());
-                }
+            for (String teleport : npcLocation.getTeleports()) {
+                panelComponent.getChildren().add(LineComponent.builder().left("- " + teleport).build());
             }
+        }
 
-            if (task.getInformation() != null) {
-                panelComponent.getChildren().add(LineComponent.builder().left(" ").build());
-                panelComponent.getChildren().add(LineComponent.builder().left(task.getInformation()).build());
-            }
+        if (task.getInformation() != null) {
+            panelComponent.getChildren().add(LineComponent.builder().left(" ").build());
+            panelComponent.getChildren().add(LineComponent.builder().left(task.getInformation()).build());
         }
 
         return super.render(graphics);

@@ -30,6 +30,7 @@ import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskOverlay;
 import com.mathiaslj.configurableslayertaskoverlay.utils.SlayerTaskWorldMapPoint;
 import com.mathiaslj.configurableslayertaskoverlay.vendor.Task;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 
 
@@ -77,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -86,9 +88,27 @@ import java.util.regex.Pattern;
         tags = {"slayer", "overlay", "task", "configurable", "world icon", "shortest path"}
 )
 public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
-    private long taskStartTime = 0;
+    /**
+     * Whether the plugin is currently guiding the player to their task. SHOWING and HIDDEN both
+     * mean a task is known, and differ only in whether the overlay, map pins and shortest path
+     * are being displayed.
+     */
+    public enum Guidance {
+        /** No task is known. */
+        NONE,
+        /** Task known, guidance displayed. */
+        SHOWING,
+        /** Task known, guidance not displayed. */
+        HIDDEN
+    }
+
+    private static final Set<String> SLAYER_MASTER_NAMES = ImmutableSet.of(
+            "turael", "aya", "spria", "krystilia", "mazchna", "achtryn", "vannaka",
+            "chaeldar", "konar quo maten", "nieve", "steve", "duradel", "kuradel");
+
     @Getter
-    private boolean taskOverlayDismissed = false;
+    private Guidance guidance = Guidance.NONE;
+    private long guidanceShownAt = 0;
     private WorldPoint shortestPathTarget = null;
     private boolean loginFlag = false;
 
@@ -184,43 +204,15 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick gameTick) {
-        if (currentSlayerTask != null && hasTaskTimedOut()) {
-            completeTask();
-            return;
-        }
-
-        if (currentSlayerTask != null && !taskOverlayDismissed) {
-            boolean reachedArea = config.taskProximityDistance() > 0 && isPlayerInTaskArea();
-            boolean startedFighting = config.hideWhenFightingTask() && isPlayerFightingTask();
-
-            if (reachedArea || startedFighting) {
-                taskOverlayDismissed = true;
-            }
-        }
-
-        if (taskOverlayDismissed && config.useShortestPath()) {
-            clearShortestPath();
+        if (guidance == Guidance.SHOWING && (shouldAutoDismiss() || hasGuidanceTimedOut())) {
+            setGuidance(Guidance.HIDDEN);
         }
 
         Widget chatBoxNpcName = client.getWidget(InterfaceID.ChatLeft.NAME);
-        // Check if current widget is a slayer master
-        if (chatBoxNpcName != null && currentSlayerTask != null) {
-            String npcName = chatBoxNpcName.getText();
-            if (npcName.equalsIgnoreCase("turael") ||
-                    npcName.equalsIgnoreCase("aya") ||
-                    npcName.equalsIgnoreCase("spria") ||
-                    npcName.equalsIgnoreCase("krystilia") ||
-                    npcName.equalsIgnoreCase("mazchna") ||
-                    npcName.equalsIgnoreCase("achtryn") ||
-                    npcName.equalsIgnoreCase("vannaka") ||
-                    npcName.equalsIgnoreCase("chaeldar") ||
-                    npcName.equalsIgnoreCase("konar quo maten") ||
-                    npcName.equalsIgnoreCase("nieve") ||
-                    npcName.equalsIgnoreCase("steve") ||
-                    npcName.equalsIgnoreCase("duradel") ||
-                    npcName.equalsIgnoreCase("kuradel")) {
-                refreshTask();
-            }
+        // Talking to a slayer master counts as interest in the task, so re-arm the timeout
+        if (chatBoxNpcName != null && currentSlayerTask != null
+                && SLAYER_MASTER_NAMES.contains(chatBoxNpcName.getText().toLowerCase())) {
+            refreshTask();
         }
 
         loginFlag = false;
@@ -241,8 +233,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         if (chatMessage.startsWith("You're assigned to kill")) {
             updateTaskFromVarbits();
-            if (!isPlayerInTaskArea() && !isPlayerFightingTask()) {
-                taskOverlayDismissed = false;
+            if (currentSlayerTask != null && !shouldAutoDismiss()) {
+                setGuidance(Guidance.SHOWING);
             }
         }
     }
@@ -524,11 +516,12 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             var taskName = (String) client.getDBTableField(taskDBRow, DBTableID.SlayerTask.COL_NAME_UPPERCASE, 0)[0];
 
             if (loginFlag) {
+                // Task predates this session, so restore it without displaying guidance
                 log.debug("Sync slayer task from varbits on login: {}", taskName);
                 SlayerTask lookupSlayerTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
                 if (lookupSlayerTask != null) {
                     this.currentSlayerTask = lookupSlayerTask;
-                    this.taskOverlayDismissed = true;
+                    setGuidance(Guidance.HIDDEN);
                 }
             } else if (currentSlayerTask == null) {
                 log.debug("New slayer task detected from varbits: {}", taskName);
@@ -552,21 +545,44 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
         if (lookupSlayerTask != null) {
             this.currentSlayerTask = lookupSlayerTask;
-            this.taskStartTime = System.currentTimeMillis();
-
-            updateWorldMapIcons();
-            updateShortestPath();
+            setGuidance(Guidance.SHOWING);
         }
     }
 
-    private boolean hasTaskTimedOut() {
+    /**
+     * Applies a guidance state and syncs everything that renders from it. The only place that
+     * writes {@link #guidance}.
+     */
+    private void setGuidance(Guidance next) {
+        if (next != guidance) {
+            log.debug("Guidance {} -> {} for {}", guidance, next,
+                    currentSlayerTask == null ? "no task" : currentSlayerTask.getName());
+        }
+
+        guidance = next;
+        if (next == Guidance.SHOWING) {
+            guidanceShownAt = System.currentTimeMillis();
+        }
+
+        updateWorldMapIcons();
+        updateShortestPath();
+    }
+
+    /** Conditions under which guidance is unwanted because the player is already on top of it. */
+    private boolean shouldAutoDismiss() {
+        boolean reachedArea = config.taskProximityDistance() > 0 && isPlayerInTaskArea();
+        boolean startedFighting = config.hideWhenFightingTask() && isPlayerFightingTask();
+        return reachedArea || startedFighting;
+    }
+
+    private boolean hasGuidanceTimedOut() {
         int timeoutSeconds = config.overlayTimeout();
 
         if (timeoutSeconds <= 0) {
             return false; // Timeout disabled
         }
 
-        long elapsedMs = System.currentTimeMillis() - taskStartTime;
+        long elapsedMs = System.currentTimeMillis() - guidanceShownAt;
         long timeoutMs = timeoutSeconds * 1000L;
 
         return elapsedMs > timeoutMs;
@@ -576,8 +592,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         // Remove all existing map icons first
         worldMapPointManager.removeIf(point -> point instanceof SlayerTaskWorldMapPoint);
 
-        // Only add icons if config is enabled and there's an active task
-        if (config.enableWorldMapIcon() && currentSlayerTask != null)
+        if (config.enableWorldMapIcon() && guidance == Guidance.SHOWING && currentSlayerTask != null)
         {
             for (WorldPoint worldPoint : currentSlayerTask.getWorldMapLocations())
             {
@@ -699,7 +714,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private void updateShortestPath()
     {
-        if (config.useShortestPath() && currentSlayerTask != null && !taskOverlayDismissed)
+        if (config.useShortestPath() && guidance == Guidance.SHOWING && currentSlayerTask != null)
         {
             WorldPoint location = currentSlayerTask.getShortestPathWorldPoint();
             setShortestPath(location);
@@ -710,20 +725,28 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
     }
 
+    /** Forgets the current task. For task completion only; use {@link Guidance#HIDDEN} to hide. */
     private void completeTask() {
         currentSlayerTask = null;
-        this.taskStartTime = 0;
-        this.taskOverlayDismissed = false;
+        this.guidanceShownAt = 0;
 
-        clearShortestPath();
-
-        worldMapPointManager.removeIf(SlayerTaskWorldMapPoint.class::isInstance);
+        setGuidance(Guidance.NONE);
     }
 
+    /**
+     * Re-arms the timeout and, if guidance is currently hidden, brings it back. Skipped when the
+     * player is already at the task location or fighting the task, since it would be hidden again
+     * on the next tick.
+     */
     private void refreshTask() {
-        if (currentSlayerTask != null) {
-            this.taskStartTime = System.currentTimeMillis();
-            log.debug("Refreshed task timer for: {}", currentSlayerTask.getName());
+        if (currentSlayerTask == null) {
+            return;
+        }
+
+        this.guidanceShownAt = System.currentTimeMillis();
+
+        if (guidance == Guidance.HIDDEN && !shouldAutoDismiss()) {
+            setGuidance(Guidance.SHOWING);
         }
     }
 

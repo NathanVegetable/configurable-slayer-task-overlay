@@ -281,7 +281,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
-        if (currentSlayerTask == null || guidance != Guidance.SHOWING) {
+        if (currentSlayerTask == null || guidance != Guidance.SHOWING || !anySettingUsesTaskLocation()) {
             return;
         }
 
@@ -359,6 +359,12 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
                         .onClick(e -> resetTaskLocation(currentSlayerTask.getName()));
             }
         }
+    }
+
+    private boolean anySettingUsesTaskLocation() {
+        return config.enableWorldMapIcon()
+                || config.useShortestPath()
+                || config.taskProximityDistance() > 0;
     }
 
     private int indexJustAboveCancel(MenuEntry[] entries) {

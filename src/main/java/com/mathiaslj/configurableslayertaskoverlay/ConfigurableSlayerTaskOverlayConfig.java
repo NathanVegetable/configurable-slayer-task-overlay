@@ -26,8 +26,6 @@ package com.mathiaslj.configurableslayertaskoverlay;
 
 import net.runelite.client.config.*;
 
-import java.awt.*;
-
 @ConfigGroup(ConfigurableSlayerTaskOverlayConfig.CONFIG_GROUP_NAME)
 public interface ConfigurableSlayerTaskOverlayConfig extends Config {
     String CONFIG_GROUP_NAME = "Configurable Slayer Task Overlay";
@@ -257,52 +255,6 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
             section = generalSettings,
             position = 5)
     default int overlayTimeout() { return 60; }
-
-    /*
-    // Highlight settings
-    @ConfigSection(
-            position = 10000,
-            name = "NPC Highlight settings",
-            description = "Customize NPC highlight settings"
-    )
-    String npcHighlightSettings = "npcHighlightSettings";
-
-    @ConfigItem(
-            position = 0,
-            keyName = "enableNpcHighlight",
-            name = "Enable NPC highlight",
-            description = "Whether you want to highlight the NPC's from your current slayer task.",
-            section = npcHighlightSettings,
-            hidden = true
-    )
-    default boolean enableNpcHighlight() {
-        return false;
-    }
-
-    @ConfigItem(
-            position = 1,
-            keyName = "npcHighlightMode",
-            name = "NPC highlight mode",
-            description = "Select how to highlight the NPC's.",
-            section = npcHighlightSettings,
-            hidden = true
-    )
-    default NpcHighlightMode getNpcHighlightMode() {
-        return NpcHighlightMode.Tile;
-    }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "npcColour",
-            name = "NPC highlight colour",
-            description = "Select the colour of the highlighted NPC's.",
-            section = npcHighlightSettings,
-            hidden = true
-    )
-    default Color getNpcColour() {
-        return Color.decode("#DDFF00");
-    }
-    */
 
     // Debug settings
     @ConfigSection(

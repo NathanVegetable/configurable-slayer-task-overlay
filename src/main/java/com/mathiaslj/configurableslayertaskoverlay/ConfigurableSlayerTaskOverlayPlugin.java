@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -258,10 +257,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         if (currentSlayerTask != null)
         {
             String taskName = currentSlayerTask.getName();
-            String nameToCheck = taskName.replaceAll("\\s+", "") + "info";
-                slayerTaskRegistry.rebuildTasks();
-                // Refresh current task if one is active
-                this.currentSlayerTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
+            slayerTaskRegistry.rebuildTasks();
+            this.currentSlayerTask = slayerTaskRegistry.getSlayerTaskByNpcName(taskName);
         }
 
         // Set a dummy task
@@ -374,10 +371,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             }
         }
         return BOTTOM_OF_MENU_INDEX;
-    }
-
-    private void onMenuOption(MenuEntry entry) {
-
     }
 
     @Subscribe
@@ -786,12 +779,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
                     .append(wp.getPlane());
         }
 
-        String serialized = sb.toString();
-
-        configManager.setConfiguration("configurable-slayer-task-overlay", "savedTaskLocations", serialized);
-
-        // Verify it was saved using configManager
-        String afterSave = configManager.getConfiguration("configurable-slayer-task-overlay", "savedTaskLocations");
+        configManager.setConfiguration("configurable-slayer-task-overlay", "savedTaskLocations", sb.toString());
     }
 
     private Map<String, WorldPoint> parseSavedLocations(String savedLocationsString)

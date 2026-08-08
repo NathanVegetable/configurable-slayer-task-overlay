@@ -27,7 +27,6 @@ package com.mathiaslj.configurableslayertaskoverlay;
 import com.mathiaslj.configurableslayertaskoverlay.models.NpcLocation;
 import com.mathiaslj.configurableslayertaskoverlay.models.SlayerTask;
 import com.mathiaslj.configurableslayertaskoverlay.utils.WorldAreaUtils;
-import net.runelite.api.World;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.coords.WorldArea;
 
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.function.Supplier;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class SlayerTaskRegistry {
@@ -55,21 +53,7 @@ public class SlayerTaskRegistry {
     public void rebuildTasks() {
         Map<String, WorldPoint> savedLocations = savedLocationsSupplier.get();
 
-        // WorldPoint GWD_location = new WorldPoint(2909, 3743, 0);
-        // WorldPoint Stronghold_dungeon = new WorldPoint(2429, 3425, 0);
-        // WorldPoint Stronghold_of_security = new WorldPoint(3082, 3420, 0);
-        // WorldPoint Fremennik_slayer_dungeon = new WorldPoint(2790, 3613, 0);
         WorldPoint Alices_farm = new WorldPoint(3630, 3524, 0);
-        // WorldPoint Taverley_dungeon = new WorldPoint(2882, 3387, 0);
-        // WorldPoint Mos_le_harmless = new WorldPoint(3750, 2973, 0);
-        // WorldPoint Edgeville_dungeon = new WorldPoint(3092, 3463, 0);
-        // WorldPoint Karuulm_dungeon = new WorldPoint(1309, 3806, 0);
-        // WorldPoint Asgarnian_dungeon = new WorldPoint(3009, 3149, 0);
-        // WorldPoint Mourner_HQ = new WorldPoint(2543, 3322, 0);
-        // WorldPoint Braindeath_island = new WorldPoint(3678, 3532, 0);
-        WorldPoint Chasm_of_fire = new WorldPoint(1436, 3671, 0);
-        // WorldPoint Dorgeshkaan = new WorldPoint(3201, 3209, 0);
-        // WorldPoint Ancient_cavern = new WorldPoint(2512, 3509, 0);
 
         // Define all locations
         WorldPoint aberrantSpectresLocation = savedLocations.getOrDefault("aberrant spectres", new WorldPoint(2459, 9791, 0));
@@ -810,22 +794,4 @@ public class SlayerTaskRegistry {
         return List.of(new NpcLocation(name, List.of(area), info));
     }
 
-    /**
-     * Creates a Goblin slayer task
-     *
-     * @param name the name of the task, for goblins in specific this should be "goblin" and "goblins"
-     * @return the goblin slayer task
-     */
-    private static SlayerTask createGoblinTask(String name) {
-        return new SlayerTask(name, List.of(
-                new WorldPoint(3145, 3301, 0)
-        ), List.of(
-                new NpcLocation("South-East of Draynor Manor", List.of(
-                        WorldAreaUtils.fromCorners(
-                                new WorldPoint(3132, 3291, 0),
-                                new WorldPoint(3156, 3312, 0)
-                        )
-                ), new String[]{"Draynor manor teleport", "Ornate Jewellery Box: Draynor Village (Option Q)", "Glory amulet: Draynor Village (Option 3)"})
-        ), "South of the Sourhog Cave");
-    }
 }

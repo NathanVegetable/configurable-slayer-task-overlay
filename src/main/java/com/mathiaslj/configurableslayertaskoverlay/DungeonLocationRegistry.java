@@ -392,18 +392,6 @@ public class DungeonLocationRegistry {
                 ),
                 new WorldPoint(1436, 3127, 0) // Entrance on surface
         ));
-        /*
-        ENTRANCES.add(new DungeonLocation(
-                "Cam Torum",
-                WorldAreaUtils.fromCorners(
-                        new WorldPoint(1388, 9602, 0),
-                        new WorldPoint(1524, 9515, 0)
-                ),
-                new WorldPoint(1436, 3127, 0) // Entrance on surface
-        ));
-
-         */
-
         ENTRANCES.add(new DungeonLocation(
                 "Miscellania Dungeon",
                 WorldAreaUtils.fromCorners(
@@ -601,7 +589,4 @@ public class DungeonLocationRegistry {
         return null;
     }
 
-    public static List<DungeonLocation> getAllEntrances() {
-        return ENTRANCES;
-    }
 }

@@ -324,18 +324,6 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
         return DebugSlayerTask.None;
     }
 
-    @ConfigItem(
-            position = 1,
-            keyName = "enableWorldPointSelector",
-            name = "Enable WorldPoint selector",
-            description = "Enables WorldPoint selector in the right click menu.",
-            section = debugSettings,
-            hidden = true
-    )
-    default boolean enableWorldPointSelector() {
-        return false;
-    }
-
     // Aberrant Spectres
     @ConfigSection(position = POSITION_ABERRANT_SPECTRES, name = "Aberrant Spectres", closedByDefault = true, description = "Information to display for slayer task")
     String aberrantSpectresSettings = "aberrantSpectres";

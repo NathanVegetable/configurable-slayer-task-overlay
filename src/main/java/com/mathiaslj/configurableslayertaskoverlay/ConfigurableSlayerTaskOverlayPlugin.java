@@ -42,8 +42,6 @@ import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
-import net.runelite.api.Tile;
-import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.DBTableID;
@@ -68,9 +66,6 @@ import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.RenderOverview;
 import net.runelite.api.MenuEntry;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -102,6 +97,10 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         HIDDEN
     }
 
+    private static final String CANCEL_OPTION = "Cancel";
+
+    private static final int BOTTOM_OF_MENU_INDEX = 0;
+
     private static final Set<String> SLAYER_MASTER_NAMES = ImmutableSet.of(
             "turael", "aya", "spria", "krystilia", "mazchna", "achtryn", "vannaka",
             "chaeldar", "konar quo maten", "nieve", "steve", "duradel", "kuradal", "mortimer");
@@ -115,13 +114,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
     private final List<Pattern> currentTaskTargetPatterns = new ArrayList<>();
     private String currentTaskPatternsFor = null;
 
-    private final String DEBUG_MENU_WORLD_POINT_ONE = "Set WorldPoint1 (Turael Skipping)";
-    private final String DEBUG_MENU_WORLD_POINT_TWO = "Set WorldPoint2 (Turael Skipping)";
-    private final String DEBUG_MENU_RESET_WORLD_POINTS = "Reset WorldPoints (Turael Skipping)";
-    private final String DEBUG_MENU_COPY_TO_CLIPBOARD = "Copy WorldPoints to clipboard (Turael Skipping)";
-
-    private WorldPoint debugWorldPointOne;
-    private WorldPoint debugWorldPointTwo;
     private SlayerTaskRegistry slayerTaskRegistry;
 
     @Inject
@@ -289,69 +281,13 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
-        if (currentSlayerTask == null) {
+        if (currentSlayerTask == null || guidance != Guidance.SHOWING) {
             return;
         }
-        /*
-        if (!config.enableWorldPointSelector()) {
-            return;
-        }
-
-        // Only add the menu entry when you can walk, so it doesn't get added when you are right-clicking in the bank
-        if (menuEntryAdded.getOption().equals("Walk here")) {
-            // Add options in reverse, so it shows up correctly in the right click menu
-            client.getMenu()
-                    .createMenuEntry(-1)
-                    .setOption(DEBUG_MENU_RESET_WORLD_POINTS)
-                    .setTarget(menuEntryAdded.getTarget())
-                    .setType(MenuAction.RUNELITE)
-                    .onClick(menuEntry -> {
-                        debugWorldPointOne = null;
-                        debugWorldPointTwo = null;
-                    });
-
-            client.getMenu()
-                    .createMenuEntry(-1)
-                    .setOption(DEBUG_MENU_COPY_TO_CLIPBOARD)
-                    .setTarget(menuEntryAdded.getTarget())
-                    .setType(MenuAction.RUNELITE)
-                    .onClick(menuEntry -> {
-                        if (debugWorldPointOne != null && debugWorldPointTwo != null) {
-                            String copyString = "new WorldPoint(" + debugWorldPointOne.getX() + ", " + debugWorldPointOne.getY() + ", " + debugWorldPointOne.getPlane() + "), " +
-                                    "new WorldPoint(" + debugWorldPointTwo.getX() + ", " + debugWorldPointTwo.getY() + ", " + debugWorldPointTwo.getPlane() + ")";
-
-                            StringSelection selection = new StringSelection(copyString);
-                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                            clipboard.setContents(selection, null);
-
-                            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "Turael Skipping", "Copied the WorldPoints to your clipboard.", "Turael Skipping");
-                        }
-                    });
-
-            client.getMenu()
-                    .createMenuEntry(-1)
-                    .setOption(DEBUG_MENU_WORLD_POINT_TWO)
-                    .setTarget(menuEntryAdded.getTarget())
-                    .setType(MenuAction.RUNELITE)
-                    .setIdentifier(menuEntryAdded.getIdentifier());
-
-            client.getMenu()
-                    .createMenuEntry(-1)
-                    .setOption(DEBUG_MENU_WORLD_POINT_ONE)
-                    .setTarget(menuEntryAdded.getTarget())
-                    .setType(MenuAction.RUNELITE)
-                    .setIdentifier(menuEntryAdded.getIdentifier());
-        }
-        */
 
         // Check if the menu is for the world map
         final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
         if (map == null)
-        {
-            return;
-        }
-
-        if (currentSlayerTask == null)
         {
             return;
         }
@@ -375,7 +311,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 // Always add "Set location" entry
         if (!hasSetEntry)
         {
-            client.createMenuEntry(entries.length)
+            client.createMenuEntry(indexJustAboveCancel(entries))
                     .setOption(setOption)
                     .setTarget(setTarget)
                     .setType(MenuAction.RUNELITE)
@@ -415,7 +351,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
             if (!hasResetEntry)
             {
-                client.createMenuEntry(entries.length)
+                client.createMenuEntry(indexJustAboveCancel(entries))
                         .setOption(resetOption)
                         .setTarget(resetTarget)
                         .setType(MenuAction.RUNELITE)
@@ -423,6 +359,15 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
                         .onClick(e -> resetTaskLocation(currentSlayerTask.getName()));
             }
         }
+    }
+
+    private int indexJustAboveCancel(MenuEntry[] entries) {
+        for (int i = 0; i < entries.length; i++) {
+            if (entries[i].getOption().equals(CANCEL_OPTION)) {
+                return i + 1;
+            }
+        }
+        return BOTTOM_OF_MENU_INDEX;
     }
 
     private void onMenuOption(MenuEntry entry) {
@@ -457,28 +402,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
                 log.debug("Checked slayer item - refreshing task overlay");
                 refreshTask();
             }
-            return;
-        }
-
-        if (!event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_ONE) && !event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_TWO)) {
-            return;
-        }
-
-        WorldView worldView = client.getLocalPlayer().getWorldView();
-        Tile selectedSceneTile = worldView.getSelectedSceneTile();
-
-        if (selectedSceneTile == null) {
-            return;
-        }
-
-        if (event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_ONE)) {
-            this.debugWorldPointOne = selectedSceneTile.getWorldLocation();
-
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "Turael Skipping", "First WorldPoint has been selected.", "Turael Skipping");
-        } else if (event.getMenuOption().equals(DEBUG_MENU_WORLD_POINT_TWO)) {
-            this.debugWorldPointTwo = selectedSceneTile.getWorldLocation();
-
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "Turael Skipping", "Second WorldPoint has been selected.", "Turael Skipping");
         }
     }
 

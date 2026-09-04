@@ -96,9 +96,9 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         HIDDEN
     }
 
-    private static final String CANCEL_OPTION = "Cancel";
-
     private static final int BOTTOM_OF_MENU_INDEX = 0;
+
+    private static final float AFTER_OTHER_MENU_SUBSCRIBERS = -1;
 
     private static final Set<String> SLAYER_MASTER_NAMES = ImmutableSet.of(
             "turael", "aya", "spria", "krystilia", "mazchna", "achtryn", "vannaka",
@@ -276,7 +276,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = AFTER_OTHER_MENU_SUBSCRIBERS)
     public void onMenuOpened(MenuOpened event) {
         if (currentSlayerTask == null || guidance != Guidance.SHOWING || !anySettingUsesTaskLocation()) {
             return;
@@ -289,7 +289,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return;
         }
 
-        MenuEntry[] entries = event.getMenuEntries();
+        MenuEntry[] entries = client.getMenu().getMenuEntries();
 
         String setOption = "Set";
         String setTarget = "<col=ff9040>" + currentSlayerTask.getName() + "</col> slayer task location";
@@ -308,7 +308,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 // Always add "Set location" entry
         if (!hasSetEntry)
         {
-            client.createMenuEntry(indexJustAboveCancel(entries))
+            client.getMenu().createMenuEntry(BOTTOM_OF_MENU_INDEX)
                     .setOption(setOption)
                     .setTarget(setTarget)
                     .setType(MenuAction.RUNELITE)
@@ -348,7 +348,7 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
             if (!hasResetEntry)
             {
-                client.createMenuEntry(indexJustAboveCancel(entries))
+                client.getMenu().createMenuEntry(BOTTOM_OF_MENU_INDEX)
                         .setOption(resetOption)
                         .setTarget(resetTarget)
                         .setType(MenuAction.RUNELITE)
@@ -362,15 +362,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         return config.enableWorldMapIcon()
                 || config.useShortestPath()
                 || config.taskProximityDistance() > 0;
-    }
-
-    private int indexJustAboveCancel(MenuEntry[] entries) {
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i].getOption().equals(CANCEL_OPTION)) {
-                return i + 1;
-            }
-        }
-        return BOTTOM_OF_MENU_INDEX;
     }
 
     @Subscribe

@@ -98,6 +98,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
 
     private static final int BOTTOM_OF_MENU_INDEX = 0;
 
+    private static final String TOGGLE_GUIDANCE_COMMAND = "slayertask";
+
     private static final float AFTER_OTHER_MENU_SUBSCRIBERS = -1;
 
     private static final Set<String> SLAYER_MASTER_NAMES = ImmutableSet.of(
@@ -207,6 +209,15 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
         loginFlag = false;
+    }
+
+    @Subscribe
+    public void onCommandExecuted(CommandExecuted event) {
+        if (!event.getCommand().equalsIgnoreCase(TOGGLE_GUIDANCE_COMMAND)) {
+            return;
+        }
+
+        toggleGuidance();
     }
 
     @Subscribe
@@ -646,6 +657,16 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         this.guidanceShownAt = 0;
 
         setGuidance(Guidance.NONE);
+    }
+
+    private void toggleGuidance() {
+        if (currentSlayerTask == null) {
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+                    "No active slayer task to show.", "");
+            return;
+        }
+
+        setGuidance(guidance == Guidance.SHOWING ? Guidance.HIDDEN : Guidance.SHOWING);
     }
 
     /**

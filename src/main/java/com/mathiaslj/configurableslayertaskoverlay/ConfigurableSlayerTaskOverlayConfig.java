@@ -251,7 +251,7 @@ public interface ConfigurableSlayerTaskOverlayConfig extends Config {
             keyName = "overlayTimeout",
             name = "Task timeout",
             description = "Time in seconds before overlay and world map icon disappears (0 to disable).<br/>" +
-                    "Use 'check' on slayer helm or enchanted gem to re-activate plugin for task.",
+                    "Use 'check' on slayer helm or enchanted gem, or type ::slayertask, to re-activate plugin for task.",
             section = generalSettings,
             position = 5)
     default int overlayTimeout() { return 60; }

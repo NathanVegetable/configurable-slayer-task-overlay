@@ -289,6 +289,8 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
             return;
         }
 
+        final WorldPoint rightClickedPoint = calculateMapPoint();
+
         MenuEntry[] entries = client.getMenu().getMenuEntries();
 
         String setOption = "Set";
@@ -306,14 +308,14 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         }
 
 // Always add "Set location" entry
-        if (!hasSetEntry)
+        if (!hasSetEntry && rightClickedPoint != null)
         {
             client.getMenu().createMenuEntry(BOTTOM_OF_MENU_INDEX)
                     .setOption(setOption)
                     .setTarget(setTarget)
                     .setType(MenuAction.RUNELITE)
                     .setDeprioritized(true)
-                    .onClick(e -> onMapClick());
+                    .onClick(e -> handleLocationSelected(rightClickedPoint));
         }
 
 // Check if any entry contains "Focus on" (indicates we're hovering over an icon)
@@ -672,15 +674,6 @@ public class ConfigurableSlayerTaskOverlayPlugin extends Plugin {
         Map<String, Object> data = new HashMap<>();
         data.put("target", target);
         eventBus.post(new PluginMessage("shortestpath", "path", data));
-    }
-
-    private void onMapClick() {
-        // Get the world point from the map click
-        final WorldPoint worldPoint = calculateMapPoint();
-
-        if (worldPoint != null) {
-            handleLocationSelected(worldPoint);
-        }
     }
 
     private WorldPoint calculateMapPoint() {

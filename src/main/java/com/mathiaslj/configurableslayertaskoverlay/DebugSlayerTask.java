@@ -107,6 +107,7 @@ public enum DebugSlayerTask {
     Molanisks,
     Monkeys,
     Moss_Giants,
+    Mutated_Zygomites,
     Nechryael,
     Ogres,
     Otherworldly_Beings,
@@ -139,6 +140,5 @@ public enum DebugSlayerTask {
     Werewolves,
     Wolves,
     Wyrms,
-    Zombies,
-    Zygomites
+    Zombies
 }

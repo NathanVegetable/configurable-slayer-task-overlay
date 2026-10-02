@@ -170,7 +170,7 @@ public class SlayerTaskRegistry {
         WorldPoint wolvesLocation = savedLocations.getOrDefault("wolves", new WorldPoint(2836, 3496, 0));
         WorldPoint wyrmsLocation = savedLocations.getOrDefault("wyrms", new WorldPoint(1272, 10183, 0));
         WorldPoint zombiesLocation = savedLocations.getOrDefault("zombies", Alices_farm);
-        WorldPoint zygomitesLocation = savedLocations.getOrDefault("zygomites", new WorldPoint(2417, 4465, 0));
+        WorldPoint zygomitesLocation = savedLocations.getOrDefault("mutated zygomites", new WorldPoint(2417, 4465, 0));
 
         tasks = Map.ofEntries(
                 Map.entry("aberrant spectres", new SlayerTask("Aberrant spectres",
@@ -742,9 +742,9 @@ public class SlayerTaskRegistry {
                         createNpcLocationsFromWorldPoint("Zombies", zombiesLocation, config.zombiesInfo().split("\n"))
                 )),
 
-                Map.entry("zygomites", new SlayerTask("Zygomites",
+                Map.entry("mutated zygomites", new SlayerTask("Mutated zygomites",
                         Collections.singletonList(zygomitesLocation),
-                        createNpcLocationsFromWorldPoint("Zygomites", zygomitesLocation, config.zygomitesInfo().split("\n"))
+                        createNpcLocationsFromWorldPoint("Mutated zygomites", zygomitesLocation, config.zygomitesInfo().split("\n"))
                 ))
         );
     }
